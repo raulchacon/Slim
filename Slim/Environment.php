@@ -141,6 +141,26 @@ class Environment implements \ArrayAccess, \IteratorAggregate
              * The PATH_INFO will be an absolute path with a leading slash; this will be
              * used for application routing.
              */
+
+            /**
+            * Set REQUEST_URI equal to HTTP_X_ORIGINAL_URL if it was incorrectly set by FastCGI.
+            * At the very least this happens in IIS7.5
+            */
+            if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
+                if ($_SERVER['REQUEST_URI'] != $_SERVER['HTTP_X_ORIGINAL_URL']) {
+                    // Check if Slim is installed in a subfolder that is part of URI
+                    if ($_SERVER['PHP_SELF'] != '/index.php') {
+                        // Trim off subfolder name from REQUEST_URI and SCRIPT_NAME
+                        $pos = strpos($_SERVER['PHP_SELF'], '/index.php');
+                        $_SERVER['REQUEST_URI'] = substr($_SERVER['HTTP_X_ORIGINAL_URL'], $pos);
+                        $_SERVER['SCRIPT_NAME'] = '/index.php';
+                    }
+                    else {
+                        $_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_ORIGINAL_URL'];    
+                    }
+                }
+            }
+
             if (strpos($_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME']) === 0) {
                 $env['SCRIPT_NAME'] = $_SERVER['SCRIPT_NAME']; //Without URL rewrite
             } else {
